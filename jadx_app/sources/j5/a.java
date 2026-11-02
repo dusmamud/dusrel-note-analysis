@@ -1,0 +1,6 @@
+package j5;
+
+/* JADX INFO: loaded from: classes.dex */
+public interface a extends AutoCloseable {
+    c c0(String str);
+}

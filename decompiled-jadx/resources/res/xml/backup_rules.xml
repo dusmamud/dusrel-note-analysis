@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude
+        domain="root"
+        path="app_webview"/>
+    <exclude
+        domain="root"
+        path="app_pccache"/>
+    <exclude
+        domain="root"
+        path="app_tmppccache"/>
+    <exclude
+        domain="root"
+        path="app_textures"/>
+    <exclude
+        domain="database"
+        path="com.google.android.datatransport.events"/>
+    <exclude
+        domain="file"
+        path="note_font"/>
+    <exclude
+        domain="file"
+        path=".note_font_incoming"/>
+</full-backup-content>

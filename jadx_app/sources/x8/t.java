@@ -1,0 +1,18 @@
+package x8;
+
+import android.os.Bundle;
+import android.os.IInterface;
+import android.os.RemoteException;
+
+/* JADX INFO: loaded from: classes2.dex */
+public interface t extends IInterface {
+    @Deprecated
+    void b(Bundle bundle) throws RemoteException;
+
+    void c(Bundle bundle) throws RemoteException;
+
+    @Deprecated
+    void d(Bundle bundle) throws RemoteException;
+
+    void e(Bundle bundle) throws RemoteException;
+}

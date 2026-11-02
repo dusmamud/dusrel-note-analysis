@@ -1,0 +1,15 @@
+package com.google.android.gms.internal.ads;
+
+import android.content.Intent;
+import android.net.Uri;
+
+/* JADX INFO: loaded from: classes.dex */
+public final class up0 implements rn3 {
+    @Override // com.google.android.gms.internal.ads.yn3
+    public final /* synthetic */ Object zzb() {
+        Intent intent = new Intent("android.intent.action.VIEW");
+        intent.setPackage("com.android.vending");
+        intent.setData(Uri.parse("https://play.google.com/d"));
+        return intent;
+    }
+}
