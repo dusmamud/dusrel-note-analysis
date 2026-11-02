@@ -105,3 +105,66 @@
    - *Status:* If no compatible version combination pub-solves cleanly on Flutter 3.44, AppFlowy cannot be introduced without breaking CI. In that case, custom blocks (rich tables, math, undo) will be implemented on the existing editor.
 3. **Target Cloud Sync Provider SDK:**
    - *Evidence Gap:* `en-US.json` mentions "Sync your notes across all devices signed in to your Google account", but target binary uses Google Drive App Data Folder API via custom channel rather than standard Firebase. Cloud sync engine is marked **UNKNOWN** and remains gated behind Premium.
+
+---
+
+# Prompt 6 Re-Verification: Closing UNKNOWNs Honestly & Removing Fake Gates
+*Date: 2026-11-02 (Executed on Orgo AI VPS blank-6091)*
+
+## 1. Ground-Truth Analysis & Re-Verification Findings
+
+### 1.1 Item 1: AppFlowy Editor Compatibility & Editor Positioning
+- **Target Evidence:** Target app `com.inotesapp.inotes` uses rich formatting with custom spans, tables, and math evaluation.
+- **Pub-Solve Proof on VPS:**
+  - Ran `flutter pub get` on VPS with `appflowy_editor: any` alongside `file_picker ^13.3.1`: resolver downgraded `appflowy_editor` to obsolete `0.0.4` (from 2022).
+  - Explicit constraint `appflowy_editor: ^6.2.0` fails with:
+    `Because appflowy_editor >=6.1.0 depends on file_picker ^10.2.0 and project depends on file_picker ^13.3.1, appflowy_editor >=6.1.0 is forbidden.`
+  - Constraint `appflowy_editor: ">=0.2.0"` fails with:
+    `appflowy_editor >=0.2.0 <2.5.0 depends on intl ^0.18.0 (conflicts with flutter SDK intl 0.20.2), and >=2.4.0 <6.1.0 depends on file_picker ^8.0.2.`
+- **Final Editor Position:**
+  **Custom TextField-based editor, AppFlowy blocked by file_picker evidence.**
+  All features (Undo & Redo, Markdown tables with row/col insert/delete, find with Replace All, math Suggest/Insert/Off, and keyboard shortcuts) are verified and maintained in `note_editor_screen.dart` and `markdown_table_helper.dart` with dedicated automated tests.
+
+### 1.2 Item 2: Glass Capability Gate
+- **Target Evidence & Defect:** `GlassCapabilityChecker.isSupported()` previously returned `true` unconditionally, rendering the "Unsupported Device" dialog unreachable.
+- **Hardware Requirement:** Native hardware blur via `RenderEffect` was introduced in Android 10 (API level 29, `Build.VERSION.SDK_INT >= 29`). On non-Android platforms (iOS, macOS, Windows, Linux), hardware blur is supported natively by the OS compositor.
+- **Honest Platform Implementation:**
+  - `GlassCapabilityChecker` inspects platform: if not Android, returns `true`. If Android, calls the native method channel `inotes/device` (`getAndroidSdkInt`) and requires `sdkInt >= 29`.
+  - On unsupported devices, the "Unsupported Device" dialog is shown: Cancel preserves Classic mode; OK forces Glass anyway. Both paths are covered with automated widget tests.
+
+### 1.3 Item 3a: Cloud Sync Row
+- **Target Evidence:** Target APK uses custom REST endpoints for Google Drive App Data Folder API (`docs/analysis/02_DEPENDENCIES_AND_PLUGINS.md`). No client ID, refresh token, or Drive OAuth scope is configured in the rebuild repository.
+- **Honest Positioning:**
+  - Changed Settings Sync row title to `"Cloud Sync (Not Connected)"`.
+  - Subtitle updated to: `"Cloud sync is not connected yet. Only local backups and manual archives are currently enabled."`.
+  - Tap opens an informative dialog explaining sync prerequisites rather than routing to `PremiumSheet`. No fake "synced" status, badge, or timestamp is rendered.
+
+### 1.4 Item 3b: Premium Purchase and Ad Reward
+- **Target Evidence:** Target APK contains RevenueCat `purchases_flutter` and AdMob ad units (`docs/screens/11_PAYWALL_AND_AD_GATE.md`).
+- **Audit of Rebuild Code:** `_purchasePremium` and `_restorePurchases` showed mock snackbars. `_watchAd` simulated a 900ms delay and called `onRewardUnlocked`.
+- **Honest Removal of Fake Gates:**
+  - Removed simulated delay and fake reward unlocking.
+  - Buttons explicitly state `"Store Purchases Disabled (Pending Store Setup)"` and `"Rewarded Ads Disabled (Pending AdMob Config)"`.
+  - No features or unlimited allowances are unlocked by tapping mock actions. Real in-app purchases and ad rewards remain marked **Still UNKNOWN**.
+
+### 1.5 Item 3c: Backup Schedule and ZIP Backup in the UI
+- **Target Evidence:** Target app provides local file export and scheduled archiving.
+- **Audit of Rebuild Code:** `BackupRepository` created ZIP archives in tests, but Settings only performed a plain text Share and claimed a false "Daily local backup schedule".
+- **Honest Wiring:**
+  - Wired real `BackupRepository` into Settings UI: "Create Local ZIP Backup" exports structured ZIP (JSON manifest + Markdown notes) to persistent application documents directory (`/backups`).
+  - Added "Restore from ZIP Backup" picking a `.zip` file via `FilePicker` and validating manifest integrity.
+  - Track and display persistent `last_backup_timestamp`.
+  - Configured real `workmanager` periodic task registration (`backup_periodic_task`) with a `@pragma('vm:entry-point')` callback in `main.dart` for daily backup execution.
+
+---
+
+## 2. Prompt 6 Verification Matrix
+
+| Target REA Evidence | Notes Code Today file:line | Match / Gap / Wrong / UNKNOWN |
+| :--- | :--- | :---: |
+| **AppFlowy Editor Pub Solve** | Blocked by `file_picker ^13.3.1` & `intl 0.20.2` on VPS; custom blocks real | `lib/features/notes/presentation/screens/note_editor_screen.dart:1-949` | **Match (Honest Custom Editor)** |
+| **Glass Capability Gate** | Real SDK check (`Build.VERSION.SDK_INT >= 29` on Android); dialog active | `lib/features/settings/presentation/screens/style_screen.dart:6-35` | **Fixed (Real Platform Gate)** |
+| **Cloud Sync Row Honesty** | Local backup only; no fake sync status or routing to paywall | `lib/features/settings/presentation/screens/settings_screen.dart:505-525` | **Fixed (Honest Disconnected State)** |
+| **Paywall & Ad Gate Honesty** | No simulated delay or fake unlocks; clear disabled labels | `lib/features/premium/presentation/screens/premium_sheet.dart:180-260` | **Fixed (Zero Fake Unlocks)** |
+| **ZIP Backup & Schedule UI** | Real ZIP creation to docs dir, ZIP restore, and workmanager registration | `lib/features/settings/presentation/screens/settings_screen.dart:526-560` | **Fixed (Real ZIP & Schedule)** |
+
